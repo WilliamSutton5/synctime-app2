@@ -103,8 +103,31 @@ export type Database = {
       }
     }
     Views: Record<never, never>
-    Functions: Record<never, never>
-    Enums: Record<never, never>
+    Functions: {
+      has_pin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      create_pin: {
+        Args: { p_pin: string }
+        Returns: undefined
+      }
+      verify_pin: {
+        Args: { p_pin: string }
+        Returns: Database['public']['Enums']['pin_verification_status']
+      }
+      reset_pin: {
+        Args: { p_pin: string }
+        Returns: undefined
+      }
+    }
+    Enums: {
+      pin_verification_status:
+        | 'verified'
+        | 'incorrect'
+        | 'locked'
+        | 'not_configured'
+    }
     CompositeTypes: Record<never, never>
   }
 }

@@ -90,13 +90,16 @@ the normal `npm run dev` command continues to use the real Supabase path.
 2. Create a new hosted Supabase project. Do not use a production project until
    the application and organizational configuration have been reviewed.
 
-3. Apply the database migration in
-   `supabase/migrations/20260818000000_create_synctime_schema.sql`.
+3. Apply the database migrations in filename order:
 
-   For a simple first setup, open the Supabase SQL Editor, paste the full file,
-   review it, and run it once. The migration creates `profiles`, `timesheets`,
-   and `time_entries`, their constraints and timestamp triggers, and all Version
-   1 RLS policies.
+   - `supabase/migrations/20260818000000_create_synctime_schema.sql`
+   - `supabase/migrations/20260823000000_create_pin_foundation.sql`
+
+   For a simple first setup, open the Supabase SQL Editor, paste each complete
+   file, review it, and run it once before moving to the next file. The first
+   migration creates the timekeeping tables and RLS policies. The second adds a
+   private salted-PIN record and authenticated RPCs for PIN setup, verification,
+   lockout, and reset. It does not add the authentication UI or configure SMS.
 
 4. When authentication implementation is explicitly resumed and its session/PIN
    design has been approved, use the Supabase dashboard to enable Phone and
@@ -165,6 +168,14 @@ draft, so submitted records stay read-only until deliberately returned to draft
 for correction. The unauthenticated database role is explicitly denied table
 access. The frontend uses only a browser-safe project key; it never contains a
 service-role credential.
+
+PIN hashes and attempt state live in a separate `private` schema with no browser
+table grants. The authenticated client will use narrow RPCs instead. PIN
+creation and reset require a signed JWT containing a nonempty phone claim and an
+OTP authentication event from the previous 15 minutes. Supabase identifies the
+method as generic `otp`, not specifically SMS, so Phone must remain the only
+enabled OTP channel. If another OTP channel is enabled later, recovery will need
+an additional server-issued proof that is specifically tied to SMS verification.
 
 ## Code layout
 

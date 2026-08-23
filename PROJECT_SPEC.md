@@ -172,13 +172,15 @@ during ordinary repeat use when the association remains valid.
 - Never put a Supabase service-role key or another privileged secret in browser
   code.
 
-The exact Supabase session/PIN mechanism is intentionally undecided. When the
-authentication implementation phase is explicitly authorized, first propose a
-simple, technically sound design in which Supabase phone verification
-establishes or recovers identity and the PIN gates recurring access. Explain the
-session lifecycle, protected PIN verification, attempt limiting, recovery, and
-new-device behavior before making major architectural changes. Do not replace
-Supabase with an entirely custom authentication system.
+The approved Version 1 mechanism keeps the Supabase session authoritative for
+identity and RLS. Phone OTP establishes or recovers that persisted session. On
+a device where the session remains valid, a server-verified 4-digit PIN acts as
+the normal application unlock without replacing the Supabase JWT. Store only a
+salted PIN hash in a private database structure, verify it through narrow
+authenticated operations, and enforce temporary server-side lockout after
+repeated failures. Initial PIN creation and PIN replacement require recent OTP
+verification. Do not replace Supabase with an entirely custom authentication
+system.
 
 Real SMS delivery and the Supabase project require later manual configuration
 and must be documented when authentication implementation begins.
