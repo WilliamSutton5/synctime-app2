@@ -5,8 +5,10 @@ import { useI18n } from '../i18n/I18nProvider'
 
 export function LoginPage({
   onSendCode,
+  mode = 'sign-in',
 }: {
   onSendCode: (phone: string) => Promise<void>
+  mode?: 'sign-in' | 'pin-recovery'
 }) {
   const { t } = useI18n()
   const [phone, setPhone] = useState('')
@@ -38,8 +40,16 @@ export function LoginPage({
       <main className="centered-panel">
         <section className="auth-card">
           <p className="eyebrow">SyncTime</p>
-          <h1>{t('welcomeTitle')}</h1>
-          <p>{t('loginDescription')}</p>
+          <h1>
+            {t(mode === 'pin-recovery' ? 'pinRecoveryTitle' : 'welcomeTitle')}
+          </h1>
+          <p>
+            {t(
+              mode === 'pin-recovery'
+                ? 'pinRecoveryDescription'
+                : 'loginDescription',
+            )}
+          </p>
           <form onSubmit={handleSubmit} noValidate>
             <label className="form-field">
               <span>{t('phoneLabel')}</span>
