@@ -112,11 +112,11 @@ the normal `npm run dev` command continues to use the real Supabase path.
    ```
 
 6. In Supabase Project Settings, copy the project URL and the browser-safe
-   publishable key (or legacy `anon` key) into `.env.local`:
+   publishable key into `.env.local`:
 
    ```dotenv
    VITE_SUPABASE_URL=https://your-project-ref.supabase.co
-   VITE_SUPABASE_ANON_KEY=your-public-anon-or-publishable-key
+   VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your-key
    ```
 
    Never use the secret key or `service_role` key here. Browser access is

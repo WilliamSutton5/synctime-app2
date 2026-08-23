@@ -369,7 +369,7 @@ environment variables such as:
 
 ```text
 VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
+VITE_SUPABASE_PUBLISHABLE_KEY=
 ```
 
 Secret-bearing local environment files must remain ignored. Never invent or
