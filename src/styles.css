@@ -286,6 +286,40 @@ h2 {
   text-align: center;
 }
 
+.pin-panel {
+  padding-block: 1.5rem;
+}
+
+.pin-card {
+  width: min(100%, 26rem);
+}
+
+.pin-card--unlock {
+  width: min(100%, 23rem);
+}
+
+.auth-card .pin-form {
+  gap: 1.1rem;
+}
+
+.pin-field {
+  justify-items: stretch;
+}
+
+.pin-input {
+  min-height: 3.8rem !important;
+  padding-left: 1.25rem !important;
+  font-size: 1.75rem !important;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800 !important;
+  letter-spacing: 0.55em;
+  text-align: center;
+}
+
+.pin-recovery-action {
+  margin-top: -0.3rem;
+}
+
 .primary-button,
 .secondary-button {
   display: inline-flex;
@@ -866,6 +900,20 @@ h2 {
   .demo-banner {
     flex-direction: column;
     gap: 0.2rem;
+  }
+}
+
+@media (max-width: 359px) {
+  .app-header__inner {
+    gap: 0.4rem;
+  }
+
+  .wordmark > span:last-child {
+    display: none;
+  }
+
+  .app-header__actions {
+    gap: 0.25rem;
   }
 }
 

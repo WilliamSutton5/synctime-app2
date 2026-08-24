@@ -23,7 +23,8 @@ import { isSupabaseConfigured, supabase } from './lib/supabase'
 import { getProfile, saveProfile } from './lib/timesheetData'
 import { ConfigurationPage } from './pages/ConfigurationPage'
 import { LoginPage } from './pages/LoginPage'
-import { PinPlaceholderPage } from './pages/PinPlaceholderPage'
+import { PinSetupPage } from './pages/PinSetupPage'
+import { PinUnlockPage } from './pages/PinUnlockPage'
 import { ProfileSetupPage } from './pages/ProfileSetupPage'
 import { TimesheetPage } from './pages/TimesheetPage'
 import { VerifyOtpPage } from './pages/VerifyOtpPage'
@@ -200,6 +201,7 @@ function ProductionApp() {
       throw new Error(result.error.debugMessage ?? result.error.message)
     }
     dispatch({ type: 'PIN_VERIFICATION_RESOLVED', result: result.data })
+    return result.data
   }
 
   async function handleResetPin(pin: string) {
@@ -268,8 +270,8 @@ function ProductionApp() {
 
     case 'pin-setup':
       return (
-        <PinPlaceholderPage
-          mode="setup"
+        <PinSetupPage
+          purpose="create"
           onSignOut={handleSignOut}
           onSubmit={handleCreatePin}
         />
@@ -277,19 +279,17 @@ function ProductionApp() {
 
     case 'pin-unlock':
       return (
-        <PinPlaceholderPage
-          mode="unlock"
-          issue={authState.issue}
+        <PinUnlockPage
           onSignOut={handleSignOut}
           onForgotPin={() => dispatch({ type: 'START_PIN_RECOVERY' })}
-          onSubmit={handleVerifyPin}
+          onUnlock={handleVerifyPin}
         />
       )
 
     case 'pin-reset':
       return (
-        <PinPlaceholderPage
-          mode="reset"
+        <PinSetupPage
+          purpose="reset"
           onSignOut={handleSignOut}
           onSubmit={handleResetPin}
         />

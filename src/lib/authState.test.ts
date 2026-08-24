@@ -184,11 +184,7 @@ describe('authentication state flow', () => {
   })
 
   it('returns to phone authentication when the session is lost', () => {
-    const state: AuthenticationState = {
-      status: 'unlocked',
-      session,
-      profile,
-    }
+    const state: AuthenticationState = { status: 'pin-unlock', session }
     expect(
       transitionAuthenticationState(state, { type: 'SESSION_LOST' }),
     ).toEqual({ status: 'phone-entry' })
@@ -210,5 +206,18 @@ describe('authentication state flow', () => {
         session,
       }),
     ).toEqual({ status: 'pin-reset', session })
+  })
+
+  it('loads the profile and unlocks after a successful PIN reset', () => {
+    const reset: AuthenticationState = { status: 'pin-reset', session }
+    const loading = transitionAuthenticationState(reset, { type: 'PIN_RESET' })
+
+    expect(loading).toEqual({ status: 'loading-application', session })
+    expect(
+      transitionAuthenticationState(loading, {
+        type: 'APPLICATION_PROFILE_RESOLVED',
+        profile,
+      }),
+    ).toEqual({ status: 'unlocked', session, profile })
   })
 })
