@@ -2,7 +2,7 @@ import { getCurrentPeriod, getPayPeriodDates, parseIsoDate } from '../lib/dates'
 import type {
   LoadedTimesheet,
   TimesheetDataSource,
-} from '../lib/timesheetData'
+} from '../lib/localPersistence'
 import { draftsToEntries, emptyHours } from '../lib/timesheetCalculations'
 import type {
   EntryDraftMap,
@@ -99,27 +99,27 @@ function createSeededTimesheet(
   const key = selectionKey(selection)
   const id = `demo-timesheet-${key}`
   const timestamp = now.toISOString()
-  const submittedAt =
-    status === 'submitted'
+  const finalizedAt =
+    status === 'finalized'
       ? new Date(now.getTime() - 4 * 60 * 60 * 1000).toISOString()
       : null
   const timesheet: Timesheet = {
     id,
-    userId: DEMO_USER_ID,
+    employeeId: DEMO_USER_ID,
     year: selection.year,
     month: selection.month,
     payPeriod: selection.payPeriod,
     status,
-    submittedAt,
+    finalizedAt,
     createdAt: timestamp,
-    updatedAt: submittedAt ?? timestamp,
+    updatedAt: finalizedAt ?? timestamp,
   }
 
   return {
     timesheet,
     entries: createRealisticEntries(
       selection,
-      status === 'submitted' ? 'complete' : 'in_progress',
+      status === 'finalized' ? 'complete' : 'in_progress',
       id,
     ),
   }
@@ -138,7 +138,7 @@ export function createDemoTimesheetDataSource(
     ],
     [
       selectionKey(priorSelection),
-      createSeededTimesheet(priorSelection, 'submitted', now),
+      createSeededTimesheet(priorSelection, 'finalized', now),
     ],
   ])
 
@@ -147,28 +147,28 @@ export function createDemoTimesheetDataSource(
       ? new Promise<void>((resolve) => window.setTimeout(resolve, latencyMs))
       : Promise.resolve()
 
-  function requireDemoUser(userId: string) {
-    if (userId !== DEMO_USER_ID) {
+  function requireDemoUser(employeeId: string) {
+    if (employeeId !== DEMO_USER_ID) {
       throw new Error('The local demo data source only accepts its mock employee.')
     }
   }
 
   async function loadTimesheet(
-    userId: string,
+    employeeId: string,
     selection: PeriodSelection,
   ): Promise<LoadedTimesheet | null> {
-    requireDemoUser(userId)
+    requireDemoUser(employeeId)
     await wait()
     const loaded = store.get(selectionKey(selection))
     return loaded ? cloneLoadedTimesheet(loaded) : null
   }
 
   async function saveDraft(
-    userId: string,
+    employeeId: string,
     selection: PeriodSelection,
     drafts: EntryDraftMap,
   ): Promise<LoadedTimesheet> {
-    requireDemoUser(userId)
+    requireDemoUser(employeeId)
     await wait()
     const key = selectionKey(selection)
     const existing = store.get(key)
@@ -177,12 +177,12 @@ export function createDemoTimesheetDataSource(
     const saved: LoadedTimesheet = {
       timesheet: {
         id: timesheetId,
-        userId,
+        employeeId,
         year: selection.year,
         month: selection.month,
         payPeriod: selection.payPeriod,
         status: 'draft',
-        submittedAt: null,
+        finalizedAt: null,
         createdAt: existing?.timesheet.createdAt ?? timestamp,
         updatedAt: timestamp,
       },
@@ -196,26 +196,26 @@ export function createDemoTimesheetDataSource(
     return cloneLoadedTimesheet(saved)
   }
 
-  async function submitTimesheet(
-    userId: string,
+  async function finalizeTimesheet(
+    employeeId: string,
     selection: PeriodSelection,
     drafts: EntryDraftMap,
   ): Promise<LoadedTimesheet> {
-    const saved = await saveDraft(userId, selection, drafts)
+    const saved = await saveDraft(employeeId, selection, drafts)
     await wait()
     const timestamp = new Date().toISOString()
-    const submitted: LoadedTimesheet = {
+    const finalized: LoadedTimesheet = {
       timesheet: {
         ...saved.timesheet,
-        status: 'submitted',
-        submittedAt: timestamp,
+        status: 'finalized',
+        finalizedAt: timestamp,
         updatedAt: timestamp,
       },
       entries: saved.entries,
     }
-    store.set(selectionKey(selection), submitted)
-    return cloneLoadedTimesheet(submitted)
+    store.set(selectionKey(selection), finalized)
+    return cloneLoadedTimesheet(finalized)
   }
 
-  return { loadTimesheet, saveDraft, submitTimesheet }
+  return { loadTimesheet, saveDraft, finalizeTimesheet }
 }

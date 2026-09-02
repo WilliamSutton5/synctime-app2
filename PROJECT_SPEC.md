@@ -1,437 +1,212 @@
-# SyncTime Product Specification
+# SyncTime Version 1 Product Specification
 
 ## 1. Product summary
 
-SyncTime is a simple, mobile-first employee timekeeping web application for one
-organization and one office. An employee should be able to authenticate, enter
-hours for a semimonthly pay period, save a draft, review and submit it, and print
-or save the submitted timesheet as a PDF. The interface supports English and
-Spanish.
-
-The governing product principle is **functional first, sophisticated later**.
-When several approaches meet a requirement, prefer the one that is simpler,
-more understandable, easier to maintain, secure, and comfortable to use on a
-phone. SyncTime is not a payroll, workforce-management, or multi-tenant system.
-
-Primary workflow:
-
-> Log in → Enter hours → Save → Review → Submit → Print
-
-The working name is SyncTime, but implementation must not make future renaming
-difficult.
-
-## 2. Version 1 scope
-
-### Required
-
-- Responsive, phone-first web application that also works on desktop.
-- First-time identity verification by phone number and SMS one-time code.
-- First-time self-registration with a minimal full-name profile and a simple
-  4-digit PIN.
-- Low-friction returning access through the employee's 4-digit PIN, without an
-  SMS challenge during ordinary repeat use.
-- SMS-based PIN recovery and identity re-verification when a new device or lost
-  authentication state makes it necessary.
-- Year, month, and semimonthly pay-period selection.
-- Automatic generation of every date in a selected period, including weekends.
-- Hour entry for Regular, Holiday, Sick Leave, Vacation Leave, and Overtime.
-- More than one hour category on a date.
-- Immediate derived daily, category, and grand totals.
-- Explicit draft saving and restoration of previously saved timesheets.
-- Review and confirmation before submission.
-- `draft` and `submitted` statuses with a submission timestamp.
-- A professional print view for submitted timesheets, using browser printing and
-  print CSS so the user can print or save as PDF.
-- A centralized English/Spanish translation system and locally persisted
-  language preference.
-- Database-level security so employees can access only their own records.
-
-### Preferred when simple
-
-- Default to the current pay period.
-- Let an employee reopen, edit, and resubmit a submitted timesheet. Editing
-  returns it to draft without revision-history or approval machinery.
-- Use the period selectors as the initial way to reopen prior timesheets.
-- Add simple installable PWA behavior after the core web workflow is reliable,
-  without offline data editing or background synchronization.
-
-### Explicitly deferred
-
-Do not implement these without a later explicit request:
-
-- Supervisors, administrators, approval/rejection, dashboards, invitations,
-  departments, roles, organizations, tenants, or office management.
-- Leave balances or accrual, payroll, pay rates, wages, eligibility rules, or
-  automatic overtime calculations.
-- Comp Time.
-- Reporting dashboards, analytics, revision history, Excel/CSV export, automatic
-  PDF email, notifications, or a dedicated history dashboard.
-- Native mobile apps, offline editing, background sync, or complex caching.
-- Dark mode, custom themes, advanced branding, or decorative animation.
-
-## 3. Users, privacy, and boundaries
-
-Version 1 has one user type: employees entering their own time. The application
-serves a single organization and office and has no in-app approval workflow.
-
-Store only data required for timekeeping. Do not store Social Security numbers,
-banking or direct-deposit data, salary, pay rate, wages, or tax information.
-The phone number is an authentication attribute used for initial identity
-verification and recovery. Keep Supabase Auth authoritative for it rather than
-duplicating it in application tables.
-
-## 4. Technology and architecture
-
-- Frontend: React, TypeScript, and Vite.
-- Backend: Supabase Auth and PostgreSQL with Row Level Security.
-- Styling: straightforward responsive CSS; no large UI framework without a
-  demonstrated need.
-- Testing: lightweight automated tests, especially for pure date and calculation
-  logic.
-- Deployment is a separate task. Do not create production hosting, DNS, secrets,
-  or infrastructure unless explicitly requested.
-
-Keep the architecture conventional and proportional to this small application.
-Small components, reusable pure utilities, and focused data-access helpers are
-appropriate. Enterprise repository/service/domain layers and dependency
-injection are not.
-
-Suggested responsibility areas, created only when used:
-
-```text
-src/
-  components/   reusable UI pieces
-  pages/        authentication, profile, editor, review, success/print views
-  lib/          Supabase configuration, date logic, calculations, persistence
-  i18n/         English and Spanish translations
-  types/        application data types
-```
+SyncTime is a simple, bilingual, mobile-first timesheet application for one
+organization and one office. It is a local-first tool, not an employee portal:
+employees do not create accounts or sign in, and the app does not send
+timesheets to a manager.
 
-## 5. Authentication and profile flow
+The Version 1 workflow is:
 
-Authentication must be intentionally simple and proportionate to SyncTime's
-low-sensitivity timekeeping data. Supabase remains the authentication
-infrastructure, but SMS is for establishing or recovering identity rather than
-the normal daily login experience.
+> Open SyncTime → enter a full name on first use → enter and save time → review
+> and finalize → print or save as PDF → forward the PDF to the manager
 
-### First-time registration
+The application must remain easy to open from a hosted URL or an installed PWA
+on a modern phone. English and Spanish are equally supported.
 
-Expected flow:
+## 2. Scope and privacy boundary
 
-> Phone Number → SMS Verification → Full Name → Create 4-Digit PIN → Timesheet
+SyncTime records only basic timekeeping information:
 
-1. Employee enters their phone number.
-2. Supabase sends an SMS one-time code through its configured provider.
-3. Employee enters the code to verify ownership of the phone number.
-4. The app checks for a profile associated with the verified Supabase identity.
-5. If no profile exists, ask for the employee's full name and save it.
-6. Employee creates a simple 4-digit PIN.
-7. Employee enters the timesheet application.
+- Employee full name.
+- Pay-period selection.
+- Daily hours by category.
+- Local draft/finalized status and timestamps.
 
-Keep profile creation before PIN creation unless a concrete technical or UX
-reason justifies reversing them. Explain that reason before changing the flow.
+It must not collect pay rates, wages, banking details, Social Security numbers,
+tax details, direct-deposit information, leave balances, or other confidential
+payroll data.
 
-### Normal returning use
+Version 1 has no employee authentication, PIN, password, one-time-code flow,
+central database, manager dashboard, approval workflow, automatic emailing, or
+cross-device synchronization. It does not claim user-level access control.
 
-Expected flow:
+## 3. Technical architecture
 
-> Open SyncTime → Enter 4-Digit PIN → Timesheet
+- React, TypeScript, and Vite.
+- Responsive mobile-first CSS.
+- Browser `localStorage` for the employee profile, language, timesheets, and
+  local finalization state.
+- A generated PWA manifest and app-shell service worker.
+- Browser Print / Save as PDF for the finished document.
+- Pure date, calculation, and review-filtering utilities.
 
-The PIN is the normal everyday access experience. Employees should not normally
-receive an SMS each time they open SyncTime. The application may retain an
-underlying Supabase authenticated session where needed, but employees should not
-need to understand or manage that session behavior.
+No runtime environment variables or external backend services are required.
+The service worker may cache the compiled application shell, but it must not
+copy timesheet records into its cache. Timesheet data remains in browser
+storage.
 
-### Forgot PIN and recovery
+## 4. Startup and employee name
 
-Expected flow:
+On first use, show the language toggle and ask for the employee's full name.
+After the name is saved locally, continue directly to the timesheet. On later
+visits in the same browser/device, load the name and timesheet workspace without
+an account or sign-in screen.
 
-> Forgot PIN → Phone Number / SMS Verification → Create New PIN → Timesheet
+The workspace must offer a simple Edit name action. Updating the name does not
+require verification and retains the same local timesheet history.
 
-SMS re-establishes the employee's identity before a replacement PIN is created.
-Keep recovery direct and understandable.
+Clearly disclose that local records can be lost if the employee clears browser
+or installed-app data. Private/incognito browsing may not retain them reliably.
 
-### New devices and lost authentication state
+## 5. Timesheet periods and dates
 
-If SyncTime cannot safely associate a device with the employee's existing
-registration, require SMS verification of the registered phone number before
-establishing or using the PIN on that device. Do not require this verification
-during ordinary repeat use when the association remains valid.
+Employees select:
 
-### Security boundary and future design work
+- Year.
+- Month.
+- `1st–15th` or `16th–End of Month`.
 
-- Never store the 4-digit PIN in plaintext or expose it or another secret in
-  frontend code.
-- Do not create a custom plaintext PIN authentication database.
-- Prevent trivial unlimited PIN attempts against arbitrary employee accounts
-  with a straightforward server-enforced attempt limit or equivalent
-  proportionate protection.
-- Do not overengineer PIN security for this low-sensitivity application.
-- Do not add passwords, email authentication, social login, MFA, authenticator
-  applications, biometrics, invitation workflows, or offline authentication.
-- Never put a Supabase service-role key or another privileged secret in browser
-  code.
+Generate every calendar date in the selected period, including weekends. Handle
+month length and leap years correctly. The current date determines the default
+period.
 
-The approved Version 1 mechanism keeps the Supabase session authoritative for
-identity and RLS. Phone OTP establishes or recovers that persisted session. On
-a device where the session remains valid, a server-verified 4-digit PIN acts as
-the normal application unlock without replacing the Supabase JWT. Store only a
-salted PIN hash in a private database structure, verify it through narrow
-authenticated operations, and enforce temporary server-side lockout after
-repeated failures. Initial PIN creation and PIN replacement require recent OTP
-verification. Do not replace Supabase with an entirely custom authentication
-system.
+Local records are distinguished by the stable local employee identity, year,
+month, and pay period. Opening a saved period restores its entries without
+overwriting other periods.
 
-Real SMS delivery and the Supabase project require later manual configuration
-and must be documented when authentication implementation begins.
+## 6. Hour entry and totals
 
-The profile contains only:
+Every editable date exposes these categories:
 
-- Authenticated user UUID (primary key).
-- Required full name.
-- Created timestamp.
-- Updated timestamp where useful.
+- Regular.
+- Holiday.
+- Sick Leave.
+- Vacation Leave.
+- Overtime.
 
-## 6. Pay-period and calendar rules
+Employees may enter multiple categories on the same date. Overtime is entered
+manually. Inputs accept blank/zero values and decimal hours but not negative
+hours.
 
-The two pay periods are:
+Calculate automatically:
 
-- `first_half`: calendar days 1–15.
-- `second_half`: calendar days 16–the final day of the month.
+- Each daily total.
+- A total for every category.
+- The pay-period grand total.
 
-The UI labels should be equivalent to `1st–15th` and `16th–End of Month` in the
-selected language. Generate all calendar dates, including Saturdays and Sundays,
-and correctly handle 28-, 29-, 30-, and 31-day months. The current period may be
-the default, but employees must be able to change the year, month, and period.
+Calculated totals do not need to be persisted separately because they can be
+derived from entries.
 
-For each selected employee/year/month/period combination, load the existing
-timesheet or begin a new in-memory draft. Never create duplicate timesheets for
-the same combination.
+## 7. Local save behavior
 
-Keep calendar logic reusable and outside presentation components. It should
-cover month length, pay-period date generation, current-period selection, ISO
-date creation, day-of-week formatting, and localized display formatting.
+Keep an explicit Save action. Saving writes the current draft to `localStorage`
+and confirms that it was saved on the device. A saved draft must reload after
+the app closes or reloads in the same browser. Unsaved edits should warn before
+switching periods or leaving the page where the browser permits it.
 
-## 7. Hours and calculations
+Local storage is device- and browser-specific. It provides no backup, server
+sync, recovery after browser-data deletion, or automatic transfer to another
+device.
 
-Each date has five employee-entered values:
+## 8. Review and finalization
 
-1. Regular
-2. Holiday
-3. Sick Leave
-4. Vacation Leave
-5. Overtime
+Use the term **Finalize**, not **Submit**, because SyncTime does not transmit the
+record. The flow is:
 
-Inputs accept reasonable decimal values such as `7.5`, treat blanks as zero in
-calculations, and reject negatives and malformed nonnumeric values. Do not add
-rules about daily or weekly maximums, eight-hour schedules, holidays, weekends,
-or overtime eligibility. Overtime is entered manually. SyncTime does not track
-leave balances.
+> Timesheet → Review & Finalize → accuracy confirmation → finalized locally
 
-Daily total:
+On the review page:
 
-```text
-regular + holiday + sick + vacation + overtime
-```
+- Hide dates whose daily total is zero.
+- For visible dates, hide hour categories whose value is zero.
+- Keep the daily total for each visible date.
+- Hide zero-value categories in the period summary.
+- Always show the grand total.
 
-The period summary derives a total for every category and a grand total from the
-entries. Totals are never entered by users and normally are not stored in the
-database. Put calculation logic in reusable pure functions and use the same
-functions in edit, review, and print views.
+The editable screen continues to show every date and category.
 
-## 8. Mobile experience and accessibility
+Finalization saves the latest entries, marks the local record `finalized`, and
+records a timestamp. Finalized means only that the employee completed the local
+record; it does not mean the manager received or approved it. A finalized sheet
+is initially read-only. The employee may edit it, which returns the record to
+draft when saved, then review and finalize it again. Do not create approval
+states.
 
-Design for modern phone browsers first, with a useful desktop layout for
-development and printing. Do not reproduce a wide desktop spreadsheet as the
-entry experience. Prefer compact, clearly dated day sections or cards that make
-all five inputs and the daily total easy to scan without horizontal scrolling.
-Subtle weekend differentiation is acceptable.
+## 9. Print and PDF output
 
-Priorities:
+A finalized timesheet offers Print / Save as PDF. The print document includes:
 
-- Large touch targets, readable text, clear numeric inputs, and minimal clutter.
-- Obvious selectors, Save, and Review & Submit actions.
-- Immediate totals, visible save/submission feedback, and useful loading states.
-- Minimal navigation and no dense dashboard, sidebar, or hidden gestures.
-- Semantic HTML, associated labels, sufficient contrast, keyboard usability,
-  understandable button text, and status communication that does not rely only
-  on color.
-- Friendly localized errors rather than raw backend details or blank screens.
-
-## 9. Draft, review, submission, correction, and history behavior
-
-### Drafts
-
-Saving is explicit. On Save, persist the timesheet and its entries and clearly
-confirm success. A returning employee can select the period and see the restored
-values. Complex autosave is not part of Version 1.
-
-### Review and submission
-
-`Review & Submit` opens a review view containing the employee name, period,
-dates, entered categories, daily totals, category totals, and grand total. It
-offers `Back to Edit` and `Confirm Submission`. Confirmation saves the current
-entries, sets status to `submitted`, records `submitted_at`, and shows success.
-
-### Corrections
-
-Where implemented simply, a submitted sheet is initially read-only and offers
-an Edit action. Saving a correction changes its status back to `draft` and clears
-the old submission timestamp. The employee then reviews and submits again; the
-timestamp updates. Do not add versioning, revisions, or approval chains.
-
-### History
-
-The year/month/period selectors are the Version 1 history interface. Do not add
-a dedicated history dashboard.
-
-## 10. Printing and PDF
-
-Only submitted timesheets need a print action. Use the browser's print dialog
-and print-specific CSS, not server-side PDF generation. The print layout may use
-a traditional table and must include:
-
-- Timesheet title, employee full name, and pay period.
-- Every date and five hour categories.
+- SyncTime employee-timesheet title.
+- Employee full name.
+- Pay-period range.
+- Status and finalization date.
+- Calendar dates and hour entries.
 - Daily totals, category totals, and grand total.
-- Submission date when available.
 
-Hide navigation and interactive controls in print. Automatic PDF emailing is
-deferred.
+Print CSS removes application navigation and controls. Version 1 uses the
+browser's print interface; desktop and mobile browsers may label or arrange the
+Save as PDF/share steps differently. Employees must save the PDF and forward it
+through their normal communication application. SyncTime does not email it.
 
-## 11. Internationalization
+If field testing shows that mobile browser printing is too confusing, a future
+small enhancement may generate a client-side PDF directly. Do not add a large
+PDF dependency without that evidence.
 
-Support exactly English and Spanish with an obvious `English | Español` switch.
-Use a small centralized dictionary/helper rather than a large localization
-framework. Persist the language to `localStorage` and format dates appropriately
-where practical.
+## 10. English and Spanish
 
-Translate meaningful UI copy, including authentication instructions, fields,
-buttons, hour categories, period controls, status and confirmation messages,
-errors, review labels, and print labels. Do not scatter hardcoded English user
-text throughout components.
+All meaningful employee-facing copy belongs in the centralized translation
+dictionary. This includes name setup, period controls, hour categories, save
+feedback, review, finalization, correction, print/PDF guidance, errors, and
+loading states. The selected language is stored locally and restored on later
+visits.
 
-## 12. Database model
+## 11. PWA behavior
 
-Core timekeeping data uses three primary application tables. Authentication
-implementation may later add the minimum server-side support required for the
-approved Supabase session/PIN design, but must not add a plaintext PIN column to
-these tables or casually expand the timekeeping schema.
+SyncTime remains installable from a hosted URL on supported phones without App
+Store or Play Store distribution. Preserve the manifest, icons, theme colors,
+and minimal app-shell service worker. Local data persistence must continue to
+work in both a normal browser tab and an installed PWA, subject to the device's
+browser-storage lifecycle.
 
-### `profiles`
+Do not add background synchronization or external data transmission.
 
-- `id uuid primary key` matching the Supabase Auth user.
-- `full_name text not null`.
-- `created_at timestamptz`.
-- `updated_at timestamptz`.
+## 12. Development demo
 
-### `timesheets`
+`npm run dev:demo` remains a development-only preview with a realistic employee,
+an in-progress current period, and a finalized previous period. It is useful for
+quick interface testing. Its in-memory sample changes reset on reload.
 
-- `id uuid primary key`.
-- `user_id uuid not null`.
-- `year integer not null`.
-- `month integer not null` (1–12).
-- `pay_period text not null` constrained to `first_half` or `second_half`.
-- `status text not null` constrained to `draft` or `submitted`.
-- `submitted_at timestamptz null`.
-- `created_at timestamptz`.
-- `updated_at timestamptz`.
-- Unique constraint on `(user_id, year, month, pay_period)`.
+Demo mode must require both Vite development mode and the explicit `demo` mode;
+it cannot be enabled by a production build. The normal application uses the
+same timesheet interface with local browser persistence.
 
-### `time_entries`
+## 13. Accessibility and visual direction
 
-- `id uuid primary key`.
-- `timesheet_id uuid not null` referencing `timesheets` with cascade deletion.
-- `entry_date date not null`.
-- Nonnegative decimal columns for regular, holiday, sick, vacation, and overtime
-  hours, defaulting to zero.
-- `created_at timestamptz`.
-- `updated_at timestamptz`.
-- Unique constraint on `(timesheet_id, entry_date)`.
+- Touch-friendly controls and readable type on small phone screens.
+- Visible labels; do not rely on placeholders alone.
+- Keyboard-operable controls and clear focus states.
+- Semantic headings, form labels, notices, and tables.
+- Warm off-white surfaces, deep teal brand color, coral accent, restrained
+  shadows, and generous spacing.
+- Professional, plain print output.
 
-Do not store derived totals.
+## 14. Testing and acceptance
 
-## 13. Database security
+Automated tests should cover date generation, calculations, review filtering,
+local name and timesheet persistence, multiple-period isolation, finalization
+and re-finalization, translations, and demo safety. A production build must
+succeed without a local environment file or backend credentials.
 
-Enable Row Level Security on all three application tables. Policies use
-`auth.uid()` and allow an authenticated employee to select, insert where
-applicable, and update only:
+Before release, manually verify first use, returning use, name editing, saving
+and reloading, period switching, finalization, correction, English/Spanish,
+print layout, PWA behavior, and representative small-phone layouts.
 
-- Their own profile (`profiles.id = auth.uid()`).
-- Their own timesheets (`timesheets.user_id = auth.uid()`).
-- Entries whose parent timesheet belongs to them.
+## 15. Deployment boundary
 
-Security must not depend on hidden React UI or browser-provided IDs. Policies
-should be readable and documented. Add no service-role access to frontend code.
-
-## 14. Configuration and operations
-
-Frontend Supabase configuration is provided through placeholder-only Vite
-environment variables such as:
-
-```text
-VITE_SUPABASE_URL=
-VITE_SUPABASE_PUBLISHABLE_KEY=
-```
-
-Secret-bearing local environment files must remain ignored. Never invent or
-hardcode production values. Repository documentation must distinguish working
-features from external/manual setup still required.
-
-When authorized Supabase authentication work is reached, document the approved
-session/PIN design plus the exact project, SQL migration, phone auth, SMS
-provider, URL/redirect, recovery, attempt-limiting, and environment-variable
-setup the developer must perform. Do not modify live Supabase resources or
-deploy production infrastructure without explicit permission.
-
-## 15. Testing and quality bar
-
-Automate the most important pure logic without making testing a separate
-project. Cover at minimum:
-
-- First-half and second-half generation.
-- February in common and leap years.
-- 30- and 31-day months.
-- Current-period detection.
-- Daily, category, and grand totals.
-
-Use TypeScript meaningfully, avoid `any` and unnecessary assertions, and favor
-clear names and straightforward data flow. After implementation work, run the
-relevant tests, lint checks, and production build. Preserve unrelated changes
-and report checks and manual configuration still required.
-
-## 16. Progressive Web App boundary
-
-After core functionality is reliable, SyncTime may include a manifest, app
-icons, and minimal safe app-shell behavior so it can be added to a phone home
-screen. It must not cache authenticated API responses or implement offline
-timesheet edits, background sync, or complex cache invalidation.
-
-The intended eventual daily PWA flow is:
-
-> Tap SyncTime on home screen → Enter 4-Digit PIN → Timesheet
-
-This clarification does not move PWA work earlier or authorize offline
-authentication architecture.
-
-## 17. Implementation roadmap
-
-1. Project guidance: repository inspection, `PROJECT_SPEC.md`, `AGENTS.md`.
-2. Frontend foundation: React, TypeScript, Vite, structure, responsive base.
-3. Core local logic/UI: types, dates, calculations, entry interface, totals.
-4. Translation foundation: English/Spanish dictionaries and language toggle.
-5. Supabase integration: client, environment shape, migration, RLS, persistence.
-6. Authentication and profiles: propose and explain the Supabase session/PIN
-   design first; after explicit implementation authorization, add first-time
-   phone OTP, name and PIN setup, low-friction PIN return access, recovery, and
-   new-device re-verification.
-7. Draft persistence: create/load unique periods, save and restore entries.
-8. Review and submission: confirmation, status, timestamp, success.
-9. Corrections/history: edit and resubmit; selectors reopen prior periods.
-10. Printing: print layout and browser Save as PDF.
-11. PWA: installability only, without offline employee data behavior.
-12. Final review: mobile UX, languages, accessibility, security, tests, build,
-   documentation, and cleanup.
-
-Build incrementally even when several phases are authorized together. Do not
-silently extend the scope into deferred features.
+Repository work does not authorize production deployment, DNS changes, external
+service configuration, or changes to previously created backend resources. Git
+history preserves the retired backend implementation. Any existing external
+project may be paused or deleted later only through a separate, deliberate
+operational decision.

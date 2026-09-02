@@ -4,14 +4,18 @@ import { Notice } from '../components/Notice'
 import { useI18n } from '../i18n/I18nProvider'
 
 export function ProfileSetupPage({
+  initialName = '',
+  isEditing = false,
   onSave,
-  onSignOut,
+  onCancel,
 }: {
+  initialName?: string
+  isEditing?: boolean
   onSave: (fullName: string) => Promise<void>
-  onSignOut: () => void
+  onCancel?: () => void
 }) {
   const { t } = useI18n()
-  const [fullName, setFullName] = useState('')
+  const [fullName, setFullName] = useState(initialName)
   const [error, setError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
@@ -35,14 +39,15 @@ export function ProfileSetupPage({
   }
 
   return (
-    <div className="auth-layout">
-      <AppHeader signOutLabel={t('signOut')} onSignOut={onSignOut} />
+    <div className="profile-layout">
+      <AppHeader />
       <main className="centered-panel">
-        <section className="auth-card">
+        <section className="profile-card">
           <p className="eyebrow">SyncTime</p>
-          <h1>{t('profileTitle')}</h1>
-          <p>{t('profileDescription')}</p>
-          <form onSubmit={handleSubmit} noValidate>
+          <h1>{t(isEditing ? 'editNameTitle' : 'profileTitle')}</h1>
+          <p>{t(isEditing ? 'editNameDescription' : 'profileDescription')}</p>
+          <p className="helper-text">{t('localStorageNotice')}</p>
+          <form className="profile-form" onSubmit={handleSubmit} noValidate>
             <label className="form-field">
               <span>{t('fullNameLabel')}</span>
               <input
@@ -56,9 +61,23 @@ export function ProfileSetupPage({
               />
             </label>
             {error ? <Notice kind="error">{error}</Notice> : null}
-            <button className="primary-button full-width" disabled={isSaving}>
-              {isSaving ? t('savingProfile') : t('saveAndContinue')}
-            </button>
+            <div className="profile-actions">
+              {onCancel ? (
+                <button
+                  className="secondary-button"
+                  type="button"
+                  disabled={isSaving}
+                  onClick={onCancel}
+                >
+                  {t('cancel')}
+                </button>
+              ) : null}
+              <button className="primary-button" disabled={isSaving}>
+                {isSaving
+                  ? t(isEditing ? 'updatingName' : 'savingProfile')
+                  : t(isEditing ? 'updateName' : 'saveAndContinue')}
+              </button>
+            </div>
           </form>
         </section>
       </main>

@@ -65,10 +65,10 @@ export function TimesheetDocument({
           <dt>{t('status')}</dt>
           <dd>{t(timesheet?.status ?? 'draft')}</dd>
         </div>
-        {timesheet?.submittedAt ? (
+        {timesheet?.finalizedAt ? (
           <div>
-            <dt>{t('submissionDate')}</dt>
-            <dd>{formatDateTime(timesheet.submittedAt, language)}</dd>
+            <dt>{t('finalizationDate')}</dt>
+            <dd>{formatDateTime(timesheet.finalizedAt, language)}</dd>
           </div>
         ) : null}
       </dl>

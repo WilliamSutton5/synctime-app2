@@ -16,16 +16,16 @@ describe('local demo data source', () => {
     expect(loaded?.entries.some((entry) => entry.vacation > 0)).toBe(true)
   })
 
-  it('loads the previous period as a submitted example', async () => {
+  it('loads the previous period as a finalized example', async () => {
     const source = createDemoTimesheetDataSource(now, 0)
     const previousSelection = { ...currentSelection, payPeriod: 'first_half' as const }
     const loaded = await source.loadTimesheet(demoProfile.id, previousSelection)
 
-    expect(loaded?.timesheet.status).toBe('submitted')
-    expect(loaded?.timesheet.submittedAt).not.toBeNull()
+    expect(loaded?.timesheet.status).toBe('finalized')
+    expect(loaded?.timesheet.finalizedAt).not.toBeNull()
   })
 
-  it('saves edits in memory and supports the submission flow', async () => {
+  it('saves edits in memory and supports the finalization flow', async () => {
     const source = createDemoTimesheetDataSource(now, 0)
     const loaded = await source.loadTimesheet(demoProfile.id, currentSelection)
     expect(loaded).not.toBeNull()
@@ -39,15 +39,15 @@ describe('local demo data source', () => {
     drafts[firstDate] = { ...drafts[firstDate]!, regular: '6.5' }
 
     await source.saveDraft(demoProfile.id, currentSelection, drafts)
-    const submitted = await source.submitTimesheet(
+    const finalized = await source.finalizeTimesheet(
       demoProfile.id,
       currentSelection,
       drafts,
     )
     const reloaded = await source.loadTimesheet(demoProfile.id, currentSelection)
 
-    expect(submitted.timesheet.status).toBe('submitted')
-    expect(submitted.timesheet.submittedAt).not.toBeNull()
+    expect(finalized.timesheet.status).toBe('finalized')
+    expect(finalized.timesheet.finalizedAt).not.toBeNull()
     expect(reloaded?.entries[0]?.regular).toBe(6.5)
   })
 })

@@ -3,6 +3,8 @@ import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // The local-first application has no runtime environment configuration.
+  envDir: false,
   plugins: [
     react(),
     VitePWA({
@@ -44,8 +46,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Precache only the compiled app shell. Authenticated Supabase requests
-        // are deliberately never placed in a runtime cache.
+        // Precache only the compiled app shell. Timesheets stay in localStorage
+        // and are never placed in the service-worker cache.
         navigateFallback: '/index.html',
         runtimeCaching: [],
       },

@@ -14,32 +14,32 @@ export function ReviewTimesheetPage({
   drafts,
   timesheet,
   onBack,
-  onSubmit,
+  onFinalize,
 }: {
   employeeName: string
   selection: PeriodSelection
   drafts: EntryDraftMap
   timesheet: Timesheet | null
   onBack: () => void
-  onSubmit: () => Promise<void>
+  onFinalize: () => Promise<void>
 }) {
   const { t } = useI18n()
   const [confirmed, setConfirmed] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isFinalizing, setIsFinalizing] = useState(false)
   const [error, setError] = useState('')
 
-  async function handleSubmit() {
+  async function handleFinalize() {
     if (!confirmed) {
       setError(t('confirmationRequired'))
       return
     }
     setError('')
-    setIsSubmitting(true)
+    setIsFinalizing(true)
     try {
-      await onSubmit()
+      await onFinalize()
     } catch {
-      setError(t('submitError'))
-      setIsSubmitting(false)
+      setError(t('finalizeError'))
+      setIsFinalizing(false)
     }
   }
 
@@ -47,7 +47,7 @@ export function ReviewTimesheetPage({
     <main className="workspace-main review-page">
       <div className="page-heading no-print">
         <div>
-          <p className="eyebrow">{t('reviewAndSubmit')}</p>
+          <p className="eyebrow">{t('reviewAndFinalize')}</p>
           <h1>{t('reviewTitle')}</h1>
           <p>{t('reviewDescription')}</p>
         </div>
@@ -75,7 +75,7 @@ export function ReviewTimesheetPage({
           <button
             className="secondary-button"
             type="button"
-            disabled={isSubmitting}
+            disabled={isFinalizing}
             onClick={onBack}
           >
             {t('backToEdit')}
@@ -83,10 +83,10 @@ export function ReviewTimesheetPage({
           <button
             className="primary-button"
             type="button"
-            disabled={isSubmitting}
-            onClick={handleSubmit}
+            disabled={isFinalizing}
+            onClick={handleFinalize}
           >
-            {isSubmitting ? t('submitting') : t('confirmSubmission')}
+            {isFinalizing ? t('finalizing') : t('confirmFinalization')}
           </button>
         </div>
       </section>

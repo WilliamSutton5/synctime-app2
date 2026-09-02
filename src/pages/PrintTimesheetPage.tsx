@@ -24,7 +24,7 @@ export function PrintTimesheetPage({
     <main className="workspace-main print-page">
       <div className="page-heading no-print">
         <div>
-          <p className="eyebrow">{t('submitted')}</p>
+          <p className="eyebrow">{t('finalized')}</p>
           <h1>{t('printTitle')}</h1>
         </div>
         <div className="button-row">

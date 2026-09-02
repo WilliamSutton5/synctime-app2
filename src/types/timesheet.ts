@@ -2,7 +2,7 @@ export type Language = 'en' | 'es'
 
 export type PayPeriod = 'first_half' | 'second_half'
 
-export type TimesheetStatus = 'draft' | 'submitted'
+export type TimesheetStatus = 'draft' | 'finalized'
 
 export const hourCategories = [
   'regular',
@@ -33,12 +33,12 @@ export interface Profile {
 
 export interface Timesheet {
   id: string
-  userId: string
+  employeeId: string
   year: number
   month: number
   payPeriod: PayPeriod
   status: TimesheetStatus
-  submittedAt: string | null
+  finalizedAt: string | null
   createdAt: string
   updatedAt: string
 }

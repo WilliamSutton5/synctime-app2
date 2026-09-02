@@ -2,12 +2,12 @@ import { LanguageToggle } from './LanguageToggle'
 
 export function AppHeader({
   greeting,
-  signOutLabel,
-  onSignOut,
+  actionLabel,
+  onAction,
 }: {
   greeting?: string
-  signOutLabel?: string
-  onSignOut?: () => void
+  actionLabel?: string
+  onAction?: () => void
 }) {
   return (
     <header className="app-header no-print">
@@ -21,9 +21,9 @@ export function AppHeader({
         <div className="app-header__actions">
           {greeting ? <span className="header-greeting">{greeting}</span> : null}
           <LanguageToggle />
-          {onSignOut && signOutLabel ? (
-            <button className="text-button" type="button" onClick={onSignOut}>
-              {signOutLabel}
+          {onAction && actionLabel ? (
+            <button className="text-button" type="button" onClick={onAction}>
+              {actionLabel}
             </button>
           ) : null}
         </div>

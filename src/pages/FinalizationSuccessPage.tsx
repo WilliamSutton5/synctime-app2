@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n/I18nProvider'
 
-export function SubmissionSuccessPage({
+export function FinalizationSuccessPage({
   onPrint,
   onBack,
 }: {
@@ -13,13 +13,21 @@ export function SubmissionSuccessPage({
       <section className="success-card">
         <div className="success-check" aria-hidden="true">✓</div>
         <p className="eyebrow">SyncTime</p>
-        <h1>{t('submittedTitle')}</h1>
-        <p>{t('submittedMessage')}</p>
+        <h1>{t('finalizedTitle')}</h1>
+        <p>{t('finalizedMessage')}</p>
         <div className="success-actions">
-          <button className="primary-button full-width" type="button" onClick={onPrint}>
+          <button
+            className="primary-button full-width"
+            type="button"
+            onClick={onPrint}
+          >
             {t('printSavePdf')}
           </button>
-          <button className="secondary-button full-width" type="button" onClick={onBack}>
+          <button
+            className="secondary-button full-width"
+            type="button"
+            onClick={onBack}
+          >
             {t('backToTimesheet')}
           </button>
         </div>

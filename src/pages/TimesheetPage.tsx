@@ -8,9 +8,9 @@ import { TimesheetSummary } from '../components/TimesheetSummary'
 import { useI18n } from '../i18n/I18nProvider'
 import { formatDateTime, formatPeriodRange, getCurrentPeriod, getPayPeriodDates } from '../lib/dates'
 import {
-  supabaseTimesheetDataSource,
+  localTimesheetDataSource,
   type TimesheetDataSource,
-} from '../lib/timesheetData'
+} from '../lib/localPersistence'
 import {
   calculatePeriodTotals,
   createEmptyDraftMap,
@@ -24,20 +24,22 @@ import type {
   Profile,
   Timesheet,
 } from '../types/timesheet'
+import { FinalizationSuccessPage } from './FinalizationSuccessPage'
 import { PrintTimesheetPage } from './PrintTimesheetPage'
 import { ReviewTimesheetPage } from './ReviewTimesheetPage'
-import { SubmissionSuccessPage } from './SubmissionSuccessPage'
 
 type WorkspaceView = 'edit' | 'review' | 'success' | 'print'
 
 export function TimesheetPage({
   profile,
-  onSignOut,
-  dataSource = supabaseTimesheetDataSource,
+  onHeaderAction,
+  headerActionLabel,
+  dataSource = localTimesheetDataSource,
   demoMode = false,
 }: {
   profile: Profile
-  onSignOut: () => void
+  onHeaderAction: () => void
+  headerActionLabel: string
   dataSource?: TimesheetDataSource
   demoMode?: boolean
 }) {
@@ -49,7 +51,7 @@ export function TimesheetPage({
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
-  const [isEditingSubmitted, setIsEditingSubmitted] = useState(false)
+  const [isEditingFinalized, setIsEditingFinalized] = useState(false)
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const loadSequence = useRef(0)
@@ -81,7 +83,7 @@ export function TimesheetPage({
     () => calculatePeriodTotals(orderedDrafts.map(draftToHours)),
     [orderedDrafts],
   )
-  const isReadOnly = timesheet?.status === 'submitted' && !isEditingSubmitted
+  const isReadOnly = timesheet?.status === 'finalized' && !isEditingFinalized
 
   useEffect(() => {
     const sequence = ++loadSequence.current
@@ -91,7 +93,7 @@ export function TimesheetPage({
         setIsLoading(true)
         setError('')
         setNotice('')
-        setIsEditingSubmitted(false)
+        setIsEditingFinalized(false)
         setTimesheet(null)
         return dataSource.loadTimesheet(profile.id, selection)
       })
@@ -160,7 +162,7 @@ export function TimesheetPage({
       setDrafts(savedEntryDrafts)
       savedDrafts.current = savedEntryDrafts
       setIsDirty(false)
-      setIsEditingSubmitted(false)
+      setIsEditingFinalized(false)
       setNotice(t('saved'))
     } catch {
       setError(t('saveError'))
@@ -169,21 +171,21 @@ export function TimesheetPage({
     }
   }
 
-  async function handleSubmit() {
+  async function handleFinalize() {
     try {
-      const submitted = await dataSource.submitTimesheet(
+      const finalized = await dataSource.finalizeTimesheet(
         profile.id,
         selection,
         drafts,
       )
-      const submittedDrafts = mergeEntriesIntoDraftMap(dates, submitted.entries)
-      setTimesheet(submitted.timesheet)
-      setDrafts(submittedDrafts)
-      savedDrafts.current = submittedDrafts
+      const finalizedDrafts = mergeEntriesIntoDraftMap(dates, finalized.entries)
+      setTimesheet(finalized.timesheet)
+      setDrafts(finalizedDrafts)
+      savedDrafts.current = finalizedDrafts
       setIsDirty(false)
-      setIsEditingSubmitted(false)
+      setIsEditingFinalized(false)
       setView('success')
-    } catch (submissionError) {
+    } catch (finalizationError) {
       try {
         const latest = await dataSource.loadTimesheet(profile.id, selection)
         if (latest) {
@@ -192,25 +194,25 @@ export function TimesheetPage({
           setDrafts(latestDrafts)
           savedDrafts.current = latestDrafts
           setIsDirty(false)
-          setIsEditingSubmitted(false)
+          setIsEditingFinalized(false)
         }
       } catch {
-        // The review screen already explains that submission failed; keep the
+        // The review screen already explains that finalization failed; keep the
         // employee's in-memory entries intact if the recovery read also fails.
       }
-      throw submissionError
+      throw finalizationError
     }
   }
 
-  function handleSignOut() {
+  function handleHeaderAction() {
     const warning = demoMode ? t('restartDemoWarning') : t('unsavedWarning')
     if (isDirty && !window.confirm(warning)) return
-    onSignOut()
+    onHeaderAction()
   }
 
-  function cancelSubmittedEditing() {
+  function cancelFinalizedEditing() {
     if (isDirty && !window.confirm(t('unsavedWarning'))) return
-    setIsEditingSubmitted(false)
+    setIsEditingFinalized(false)
     setIsDirty(false)
     setDrafts(savedDrafts.current)
   }
@@ -219,8 +221,8 @@ export function TimesheetPage({
     <>
       <AppHeader
         greeting={t('greeting', { name: profile.fullName })}
-        signOutLabel={demoMode ? t('restartDemo') : t('signOut')}
-        onSignOut={handleSignOut}
+        actionLabel={headerActionLabel}
+        onAction={handleHeaderAction}
       />
       {demoMode ? (
         <aside className="demo-banner no-print" aria-label={t('demoMode')}>
@@ -241,7 +243,7 @@ export function TimesheetPage({
           drafts={drafts}
           timesheet={timesheet}
           onBack={() => setView('edit')}
-          onSubmit={handleSubmit}
+          onFinalize={handleFinalize}
         />
       </div>
     )
@@ -251,7 +253,7 @@ export function TimesheetPage({
     return (
       <div className="workspace-layout">
         {header}
-        <SubmissionSuccessPage
+        <FinalizationSuccessPage
           onPrint={() => setView('print')}
           onBack={() => setView('edit')}
         />
@@ -299,14 +301,14 @@ export function TimesheetPage({
         {error ? <Notice kind="error">{error}</Notice> : null}
         {notice ? <Notice kind="success">{notice}</Notice> : null}
         {!timesheet && !isLoading ? <Notice>{t('newTimesheet')}</Notice> : null}
-        {timesheet?.submittedAt && !isEditingSubmitted ? (
+        {timesheet?.finalizedAt && !isEditingFinalized ? (
           <Notice kind="success">
-            {t('submittedOn', {
-              date: formatDateTime(timesheet.submittedAt, language),
+            {t('finalizedOn', {
+              date: formatDateTime(timesheet.finalizedAt, language),
             })}
           </Notice>
         ) : null}
-        {isEditingSubmitted ? (
+        {isEditingFinalized ? (
           <Notice>
             <strong>{t('editingNotice')}</strong> {t('editExplanation')}
           </Notice>
@@ -317,15 +319,15 @@ export function TimesheetPage({
         ) : (
           <>
             {isReadOnly ? (
-              <section className="submitted-actions">
-                <p>{t('submittedReadOnly')}</p>
+              <section className="finalized-actions">
+                <p>{t('finalizedReadOnly')}</p>
                 <div className="button-row">
                   <button
                     className="secondary-button"
                     type="button"
-                    onClick={() => setIsEditingSubmitted(true)}
+                    onClick={() => setIsEditingFinalized(true)}
                   >
-                    {t('editSubmitted')}
+                    {t('editFinalized')}
                   </button>
                   <button
                     className="primary-button"
@@ -355,12 +357,12 @@ export function TimesheetPage({
 
             {!isReadOnly ? (
               <div className="action-bar no-print">
-                {isEditingSubmitted ? (
+                {isEditingFinalized ? (
                   <button
                     className="text-button"
                     type="button"
                     disabled={isSaving}
-                    onClick={cancelSubmittedEditing}
+                    onClick={cancelFinalizedEditing}
                   >
                     {t('cancelEditing')}
                   </button>
@@ -379,7 +381,7 @@ export function TimesheetPage({
                   disabled={isSaving}
                   onClick={() => setView('review')}
                 >
-                  {t('reviewAndSubmit')}
+                  {t('reviewAndFinalize')}
                 </button>
               </div>
             ) : null}
