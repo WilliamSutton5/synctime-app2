@@ -49,6 +49,16 @@ afterEach(() => {
 })
 
 describe('timesheet document dates', () => {
+  it('includes weekdays in English finalized on-screen dates', () => {
+    expect(renderDocument('en')).toContain('<strong>Tue, Sep 1</strong>')
+  })
+
+  it('includes weekdays in Spanish finalized on-screen dates', () => {
+    expect(renderDocument('es')).toContain(
+      '<strong>mar, 1 de sept</strong>',
+    )
+  })
+
   it('includes weekdays in English print-table dates', () => {
     expect(renderDocument('en')).toContain('<th>Tue, Sep 1</th>')
   })

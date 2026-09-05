@@ -3,7 +3,6 @@ import {
   formatCompactWeekdayDate,
   formatDateTime,
   formatPeriodRange,
-  formatShortDate,
 } from '../lib/dates'
 import {
   calculateDailyTotal,
@@ -84,9 +83,7 @@ export function TimesheetDocument({
             <section className="review-entry" key={entry.entryDate}>
               <div className="review-entry__date">
                 <strong>
-                  {conciseReview
-                    ? formatCompactWeekdayDate(entry.entryDate, language)
-                    : formatShortDate(entry.entryDate, language)}
+                  {formatCompactWeekdayDate(entry.entryDate, language)}
                 </strong>
                 <span>
                   {formatHours(calculateDailyTotal(hours))} {t('hoursShort')}
