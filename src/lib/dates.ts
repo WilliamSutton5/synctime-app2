@@ -52,6 +52,14 @@ export function formatShortDate(isoDate: string, language: Language): string {
   }).format(parseIsoDate(isoDate))
 }
 
+export function formatReviewDate(isoDate: string, language: Language): string {
+  return new Intl.DateTimeFormat(language === 'es' ? 'es-US' : 'en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  }).format(parseIsoDate(isoDate))
+}
+
 export function formatMonth(month: number, language: Language): string {
   return new Intl.DateTimeFormat(language === 'es' ? 'es-US' : 'en-US', {
     month: 'long',

@@ -759,10 +759,6 @@ h2 {
   background: #edf2ef;
 }
 
-.review-entry__date strong {
-  text-transform: capitalize;
-}
-
 .review-entry__date span {
   color: var(--teal-dark);
   font-size: 0.82rem;

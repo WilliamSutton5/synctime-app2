@@ -2,6 +2,7 @@ import { useI18n } from '../i18n/I18nProvider'
 import {
   formatDateTime,
   formatPeriodRange,
+  formatReviewDate,
   formatShortDate,
 } from '../lib/dates'
 import {
@@ -82,7 +83,11 @@ export function TimesheetDocument({
           return (
             <section className="review-entry" key={entry.entryDate}>
               <div className="review-entry__date">
-                <strong>{formatShortDate(entry.entryDate, language)}</strong>
+                <strong>
+                  {conciseReview
+                    ? formatReviewDate(entry.entryDate, language)
+                    : formatShortDate(entry.entryDate, language)}
+                </strong>
                 <span>
                   {formatHours(calculateDailyTotal(hours))} {t('hoursShort')}
                 </span>

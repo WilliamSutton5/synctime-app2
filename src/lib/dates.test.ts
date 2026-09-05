@@ -1,11 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import {
+  formatReviewDate,
   getCurrentPeriod,
   getDaysInMonth,
   getPayPeriodDates,
 } from './dates'
 
 describe('pay-period date logic', () => {
+  it('includes a localized weekday in English review dates', () => {
+    expect(formatReviewDate('2026-09-01', 'en')).toBe('Tue, Sep 1')
+  })
+
+  it('includes a localized weekday in Spanish review dates', () => {
+    expect(formatReviewDate('2026-09-01', 'es')).toBe('mar, 1 de sept')
+  })
+
   it('generates the first through fifteenth for the first half', () => {
     const dates = getPayPeriodDates(2026, 8, 'first_half')
     expect(dates).toHaveLength(15)
