@@ -52,7 +52,10 @@ export function formatShortDate(isoDate: string, language: Language): string {
   }).format(parseIsoDate(isoDate))
 }
 
-export function formatReviewDate(isoDate: string, language: Language): string {
+export function formatCompactWeekdayDate(
+  isoDate: string,
+  language: Language,
+): string {
   return new Intl.DateTimeFormat(language === 'es' ? 'es-US' : 'en-US', {
     weekday: 'short',
     month: 'short',

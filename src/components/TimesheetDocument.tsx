@@ -1,8 +1,8 @@
 import { useI18n } from '../i18n/I18nProvider'
 import {
+  formatCompactWeekdayDate,
   formatDateTime,
   formatPeriodRange,
-  formatReviewDate,
   formatShortDate,
 } from '../lib/dates'
 import {
@@ -85,7 +85,7 @@ export function TimesheetDocument({
               <div className="review-entry__date">
                 <strong>
                   {conciseReview
-                    ? formatReviewDate(entry.entryDate, language)
+                    ? formatCompactWeekdayDate(entry.entryDate, language)
                     : formatShortDate(entry.entryDate, language)}
                 </strong>
                 <span>
@@ -123,7 +123,9 @@ export function TimesheetDocument({
             const hours = draftToHours(entry)
             return (
               <tr key={entry.entryDate}>
-                <th>{formatShortDate(entry.entryDate, language)}</th>
+                <th>
+                  {formatCompactWeekdayDate(entry.entryDate, language)}
+                </th>
                 {hourCategories.map((category) => (
                   <td key={category}>{formatHours(hours[category])}</td>
                 ))}
